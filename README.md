@@ -15,7 +15,7 @@ The following steps will all be executed in the project's root directory. These 
 1. [Creating a virtual environment](#creating-a-virtual-environment)
 2. [Installing dependencies](#installing-dependencies)
 3. [Setting the environment variables](#setting-the-environment-variables)
-4. [Running and testing the API](running-and-testing-the-api)
+4. [Running and testing the API](#running-and-testing-the-api)
 
 ### Creating a virtual environment
 The first step before installing any dependencies is to create a virtual environment for our application to live in. These commands are:
