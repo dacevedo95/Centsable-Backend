@@ -2,14 +2,22 @@
 This repository is built on python and flask, and is the backend service to the iOS app Ping'd. Below will explain how to run the API on your local machine.
 
 ## Getting Started
-Getting the API to run on your local machine is not difficult, but does require some preliminary steps. These steps are:
+Getting the API to run on your local machine is not difficult, but does require some preliminary steps.
 
-1. Creating a virtual environment
-2. Installing dependencies
-3. Setting the environment variables
-4. Running and testing the API
+After cloning the repository onto your computer, run the following command to hop into the project root directory.
 
-#### Creating a virtual environment
+```
+$ cd PingdBackend
+```
+
+The following steps will all be executed in the project's root directory. These steps are:
+
+1. [Creating a virtual environment](#creating-a-virtual-environment)
+2. [Installing dependencies](#installing-dependencies)
+3. [Setting the environment variables](#setting-the-environment-variables)
+4. [Running and testing the API](running-and-testing-the-api)
+
+### Creating a virtual environment
 The first step before installing any dependencies is to create a virtual environment for our application to live in. These commands are:
 
 ```
@@ -35,7 +43,7 @@ $ source venv/bin/activate
 ```
 Now that we have created and activated our virtual environment, it is time to install the dependencies.
 
-#### Installing dependencies
+### Installing dependencies
 All dependencies are neatly defined within the requirements.txt file. <b>Before installing, make sure the virtual environment is active!</b> Once you confirm that it is active, run the following command:
 
 ```
@@ -52,7 +60,7 @@ To verify that the dependencies are installed, you can run the python shell and 
 
 If no error shows, then you have successfully installed the dependencies into the virtual environment.
 
-#### Setting the environment variables
+### Setting the environment variables
 The last step before running and testing the API is to install the following environment variables. <b>Again, make sure that the virtual environment is still activated before setting the environment variables.</b>
 ```
 ### For Mac/Linux:
@@ -67,7 +75,7 @@ The last step before running and testing the API is to install the following env
 ```
 Without going into too much detail, the above defines the environment we created in step 1 as a "Development" environment only meant for debugging (FLASK_DEBUG=1). It also defines an entry point to our application as "application.py". More information can be found [here](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world).
 
-#### Running and testing the API
+### Running and testing the API
 Finally, we are all set to run and hit the applications endpoint. In the terminal, with the virtual environment still active, run the following command:
 
 ```
