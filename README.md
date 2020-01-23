@@ -1,5 +1,7 @@
 # PingdBackend
-This repository is built on python and flask, and is the backend service to the iOS app Ping'd. Below will explain how to run the API on your local machine.
+This repository is built on python and flask, and is the backend service to the iOS app Ping'd. Below will explain you need to know.
+
+1. [Getting Started](#getting-started)
 
 ## Getting Started
 Getting the API to run on your local machine is not difficult, but does require some preliminary steps.
@@ -97,7 +99,7 @@ The output of this command should look a little something like this:
 
 These messages now imply that our app is running in a "Development" environment and that "Debug mode" is on.
 
-If you open up your browser and type in the URL http://127.0.0.1:5000/, or if you open up (Postman)[https://www.getpostman.com/] and send a GET request to http://127.0.0.1:5000/, you should see the following output:
+If you open up your browser and type in the URL http://127.0.0.1:5000/api/v1/hello, or if you open up (Postman)[https://www.getpostman.com/] and send a GET request to http://127.0.0.1:5000/api/v1/hello, you should see the following output:
 
 ```
 {
