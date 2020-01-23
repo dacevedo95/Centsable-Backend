@@ -1,5 +1,7 @@
 from flask import Flask
 from config import Config
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -7,11 +9,18 @@ from logging.handlers import RotatingFileHandler
 import os
 
 
+db = SQLAlchemy()
+migrate = Migrate()
+
+
 def create_app(config=Config):
 
     # Creates a flask app and attaches a configuration to it
     app = Flask(__name__)
     app.config.from_object(config)
+
+    db.init_app(app)
+    migrate.init_app(app, db)
 
     # Registers the API blueprint to the app instance
     from app.api import bp as api_bp
@@ -72,3 +81,5 @@ def create_app(config=Config):
 
     # Returns the app instance
     return app
+
+from app import models
