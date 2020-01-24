@@ -2,6 +2,7 @@ from flask import Flask
 from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 
 import logging
 from logging.handlers import RotatingFileHandler
@@ -11,6 +12,7 @@ import os
 
 db = SQLAlchemy()
 migrate = Migrate()
+jwt = JWTManager()
 
 
 def create_app(config=Config):
@@ -21,10 +23,15 @@ def create_app(config=Config):
 
     db.init_app(app)
     migrate.init_app(app, db)
+    jwt.init_app(app)
 
     # Registers the API blueprint to the app instance
     from app.api import bp as api_bp
     app.register_blueprint(api_bp)
+
+    # Registers the API blueprint to the app instance
+    from app.errors import bp as error_handler_bp
+    app.register_blueprint(error_handler_bp)
 
     # Only sets up the logger in production, when debugging and testing are off
     if not app.debug and not app.testing:

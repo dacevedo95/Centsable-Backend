@@ -1,49 +1,20 @@
-from flask import g
-from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
-from app.models import User
-from app.api.errors import error_response
+from functools import wraps
 
-basic_auth = HTTPBasicAuth()
-token_auth = HTTPTokenAuth()
+from flask import request, jsonify
+from flask_jwt_extended import verify_jwt_in_request, verify_jwt_refresh_token_in_request
 
-@basic_auth.verify_password
-def verify_password(email, password):
-    """
-    This function is called whenever the @basic_auth.login_required decorator is called (Just for api/v1/token)
+def verify_request(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        return fn(*args, **kwargs)
 
-    If first looks up a user by their email, and returns False if their is no user with that email.
-    If a user is found, we than check the password passed. If the password is correct, we return True. Else, we
-    return false.
-    """
+    return wrapper
 
-    # Tries to find a user by the given email
-    user = User.query.filter_by(email=email).first()
-    # Returns false if the user does not exist
-    if user is None:
-        return False
-    # Sets the user as a global variable
-    g.current_user = user
-    # Checks the password of the user
-    return user.check_password(password)
+def verify_refresh_request(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_refresh_token_in_request()
+        return fn(*args, **kwargs)
 
-@basic_auth.error_handler
-def basic_auth_error():
-    """
-    This function is triggered whenever the above "verify_password" function returns False.
-
-    We return a 401 "Unauthorized" message stating "We don't know who you're trying to be"
-    """
-
-    return error_response(401)
-
-@token_auth.verify_token
-def verify_token(token):
-    """
-    This function is called whenever the @token_auth.login_required decorator is called
-    """
-    g.current_user = User.check_token(token) if token else None
-    return g.current_user is not None
-
-@token_auth.error_handler
-def token_auth_error():
-    return error_response(401)
+    return wrapper
