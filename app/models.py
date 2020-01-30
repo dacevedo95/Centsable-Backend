@@ -21,3 +21,23 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def to_dict(self, include_email=False):
+        data = {
+            'id': self.id,
+            'firstName': self.first_name,
+            'lastName': self.last_name,
+            'phoneNumber': self.phone_number
+        }
+        if include_email:
+            data['email'] = self.email
+        return data
+
+    def from_dict(self, data, new_user=False):
+        self.first_name = data['firstName']
+        self.last_name = data['lastName']
+        self.phone_number = data['phoneNumber']
+        self.email = data['email']
+
+        if new_user and 'password' in data:
+            self.set_password(password=data['password'])
