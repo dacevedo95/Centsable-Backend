@@ -14,13 +14,13 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
-
 def create_app(config=Config):
 
     # Creates a flask app and attaches a configuration to it
     app = Flask(__name__)
     app.config.from_object(config)
 
+    # attach the instances to the app
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
