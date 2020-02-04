@@ -14,13 +14,8 @@ def check_user_exists():
         params = request.args
         exist_response = dict()
 
-        if 'email' not in params or 'phoneNumber' not in params:
+        if 'phoneNumber' not in params:
             return error_response(400)
-
-        user_by_email = User.query.filter_by(email=params['email']).first()
-        if user_by_email != None:
-            exist_response['exists'] = True
-            exist_response['emailExists'] = True
 
         user_by_phone = User.query.filter_by(phone_number=params['phoneNumber']).first()
         if user_by_phone != None:
