@@ -12,7 +12,7 @@ import os
 
 db = SQLAlchemy()
 migrate = Migrate()
-jwt = JWTManager()
+jwt = JWTManager(ß
 
 def create_app(config=Config):
 
