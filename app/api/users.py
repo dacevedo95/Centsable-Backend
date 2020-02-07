@@ -15,7 +15,7 @@ def check_user_exists():
         # Checks whether the 'phoneNumber' parameter has been included and is not empty
         params = request.args
         if 'phoneNumber' not in params or params['phoneNumber'] == "" or params['phoneNumber'] == None:
-            current_app.logger.error('phoneNumber not included in request arguements')
+            current_app.logger.error('phoneNumber not included in request arguements: {0}'.format(params))
             return error_response(400)
 
         # Builds the initial response object and
@@ -53,7 +53,7 @@ def create_user():
             'lastName' not in request_data or
             'phoneNumber' not in request_data or
             'password' not in request_data):
-            current_app.logger.error('request body not formatted correctly, body is missing required parameters.')
+            current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
         # Creates a User object and creates the user from the request body json
