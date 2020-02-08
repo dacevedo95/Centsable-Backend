@@ -1,6 +1,7 @@
 import base64
 from datetime import datetime, timedelta
 import os
+import datetime
 
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,6 +12,7 @@ class User(db.Model):
     last_name = db.Column(db.String(32))
     phone_number = db.Column(db.String(32), index=True, unique=True)
     password_hash = db.Column(db.String(128))
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
         return '<User: {0}>'.format(self.email)
