@@ -23,24 +23,24 @@ def get_token():
         return jsonify({"msg": "Missing JSON in request"}), 400
 
     # Gets the username and password, and defaults to null
-    email = request.json.get('email', None)
+    phone_number = request.json.get('phoneNumber', None)
     password = request.json.get('password', None)
 
     # Validation in case the user didn't include anything
-    if not email:
-        return jsonify({"msg": "Missing email parameter"}), 400
+    if not phone_number:
+        return jsonify({"msg": "Missing phoneNumber parameter"}), 400
     if not password:
         return jsonify({"msg": "Missing password parameter"}), 400
 
     # Tries to find a user by the given email
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(phone_number=phone_number).first()
     # Returns false if the user does not exist
     if user is None or not user.check_password(password):
-        return jsonify({"msg": "Email or password is incorrect"}), 400
+        return jsonify({"msg": "Phone number or password is incorrect"}), 400
 
     # Generates the access token
-    access_token = create_access_token(identity=email)
-    refresh_token = create_refresh_token(identity=email)
+    access_token = create_access_token(identity=phone_number)
+    refresh_token = create_refresh_token(identity=phone_number)
 
     # Returns the access token
     return jsonify({
