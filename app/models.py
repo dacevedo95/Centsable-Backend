@@ -10,9 +10,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(32))
     last_name = db.Column(db.String(32))
+    country_calling_code = db.Column(db.String(8))
     phone_number = db.Column(db.String(32), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    verified_at = db.Column(db.DateTime)
 
     def __repr__(self):
         return '<User: {0}>'.format(self.email)
@@ -28,14 +30,15 @@ class User(db.Model):
             'id': self.id,
             'firstName': self.first_name,
             'lastName': self.last_name,
-            'phoneNumber': self.phone_number
+            'country_calling_code': self.country_calling_code,
+            'phoneNumber': self.phone_number,
+            'createdAt': self.created_at
         }
         return data
 
     def from_dict(self, data, new_user=False):
         self.first_name = data['firstName']
         self.last_name = data['lastName']
-        self.phone_number = data['phoneNumber']
 
         if new_user and 'password' in data:
             self.set_password(password=data['password'])
