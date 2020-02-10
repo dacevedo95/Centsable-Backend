@@ -10,13 +10,14 @@ import json
 from twilio.rest import Client
 
 
-@bp.route('/users/<phone_number>/exists', methods=['GET'])
-def check_user_exists(phone_number):
+@bp.route('/users/exists', methods=['POST'])
+def check_user_exists():
     try:
         # Gets the parameters for the call and
         # Checks whether the 'phoneNumber' parameter has been included and is not empty
-        if phone_number == None or phone_number == '':
-            current_app.logger.error('phoneNumber not included in request arguements: {0}'.format(params))
+        request_data = json.loads(request.data)
+        if 'phoneNumber' not in request_data or 'countryCode' not in request_data:
+            current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
         # Builds the initial response object and
@@ -24,6 +25,7 @@ def check_user_exists(phone_number):
         exist_response = {
             'exists': False
         }
+        phone_number = request_data['phoneNumber']
         current_app.logger.info('Checking if user with phone number {0} exists'.format(phone_number))
 
         # Makes a call against the database to find a user based on the phone number filter and
