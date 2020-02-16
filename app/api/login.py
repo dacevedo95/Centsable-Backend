@@ -36,7 +36,7 @@ def get_token():
     user = User.query.filter_by(phone_number=phone_number).first()
     # Returns false if the user does not exist
     if user is None or not user.check_password(password):
-        return jsonify({"msg": "Phone number or password is incorrect"}), 400
+        return jsonify({"msg": "Phone number or password is incorrect"}), 401
 
     # Generates the access token
     access_token = create_access_token(identity=phone_number)
