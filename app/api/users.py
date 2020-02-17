@@ -139,7 +139,8 @@ def check_verification():
             current_app.logger.info('verified user with phone number {0} and status {1}'.format(verification_check.to, verification_check.status))
             return error_response(204)
         else:
-            raise Exception('could not check verification, status is {0}'.format(verification_check.status))
+            current_app.logger.error('phone number {0} was not verified, received status: {1}', verification_check.to, verification_check.status)
+            return error_response(400)
     except Exception as e:
         # Logs the exception when it happens and
         # Returns a 500 response (Internal Server Error)
