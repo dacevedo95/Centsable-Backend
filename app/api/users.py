@@ -119,7 +119,7 @@ def send_verification():
         return error_response(500)
 
 
-@bp.route('/users/verification/check', methods=['GET'])
+@bp.route('/users/verification/check', methods=['POST'])
 def check_verification():
     try:
         # Loads the request data into a json object and
