@@ -44,3 +44,6 @@ class User(db.Model):
 
         if new_user and 'password' in data:
             self.set_password(password=data['password'])
+
+    def reset_password(self, newPassword):
+        self.set_password(password=newPassword)

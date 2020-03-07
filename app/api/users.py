@@ -5,6 +5,7 @@ from app.models import User
 from app.api.auth import verify_request
 from app.api.errors import error_response
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims
+from sqlalchemy import and_
 
 import json
 import time
@@ -155,6 +156,49 @@ def check_verification():
         # Returns a 500 response (Internal Server Error)
         current_app.logger.fatal(str(e))
         return error_response(500)
+
+
+@bp.route('/users/reset-password', methods=['POST'])
+@jwt_required
+def reset_password():
+    try:
+        # Loads the request body into a json format and
+        # Checks if all required parameters are included in the request
+        request_data = json.loads(request.data)
+        if ('newPassword' not in request_data or
+            'phoneNumber' not in request_data or
+            'countryCode' not in request_data):
+            current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
+            return error_response(400)
+
+        # Checks if the JWT identity is the same as the one being created
+        identity = get_jwt_identity()
+        if identity != "+" + request_data['countryCode'] + request_data['phoneNumber']:
+            current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
+            return error_response(400)
+
+        # Resets the password
+        user = User.query.filter(User.country_calling_code == request_data['countryCode'], User.phone_number == request_data['phoneNumber']).first()
+        user.reset_password(newPassword=request_data['newPassword'])
+
+        # Logs that the user is being added to the database and then adds to the database
+        # We will commit later once everything has been processed correctly
+        db.session.add(user)
+        current_app.logger.info('added for country code {0} and phone number {1}'.format(request_data['countryCode'], request_data['phoneNumber']))
+
+        # Commits the user to the database and logs that is has been commited
+        db.session.commit()
+        current_app.logger.info('commited for country code {0} and phone number {1}'.format(request_data['countryCode'], request_data['phoneNumber']))
+
+        # Returns status code 200
+        return error_response(200)
+    except Exception as e:
+        # Logs the exception that has been raised and rolls back all the changes made
+        current_app.logger.fatal(str(e))
+        db.session.rollback()
+        # Returns a 500 response (Internal Server Error)
+        return error_response(500)
+
 
 
 def __create_verification(channel, country_calling_code, phone_number):
