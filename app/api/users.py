@@ -4,7 +4,7 @@ from app.api import bp
 from app.models import User
 from app.api.auth import verify_request
 from app.api.errors import error_response
-from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims
 
 import json
 import time
@@ -47,9 +47,13 @@ def check_user_exists():
         return error_response(500)
 
 
+@jwt_required
 @bp.route('/users', methods=['POST'])
 def create_user():
     try:
+        # Checks if the country code and access token in the request are the staticmethod
+
+
         # Loads the request body into a json format and
         # Checks if all required parameters are included in the request
         request_data = json.loads(request.data)
@@ -137,7 +141,17 @@ def check_verification():
         # If the status is anything else, we throw an exception
         if verification_check.status == 'approved':
             current_app.logger.info('verified user with phone number {0} and status {1}'.format(verification_check.to, verification_check.status))
-            return error_response(204)
+
+            # Creates the access token and the refresh token with identity equal to the key in the database
+            access_token = create_access_token(identity=verification_check.to)
+            refresh_token = create_refresh_token(identity=verification_check.to)
+
+            # Returns the response with status code 201 to indicate the user has been created
+            return jsonify({
+                'token': access_token,
+                'expires_at': int(time.time()) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] - 1,
+                'refresh_token': refresh_token
+            }), 200
         else:
             current_app.logger.error('phone number {0} was not verified, received status: {1}'.format(verification_check.to, verification_check.status))
             return error_response(400)
