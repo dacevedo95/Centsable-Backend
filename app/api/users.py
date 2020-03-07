@@ -47,13 +47,10 @@ def check_user_exists():
         return error_response(500)
 
 
-@jwt_required
 @bp.route('/users', methods=['POST'])
+@jwt_required
 def create_user():
     try:
-        # Checks if the country code and access token in the request are the staticmethod
-
-
         # Loads the request body into a json format and
         # Checks if all required parameters are included in the request
         request_data = json.loads(request.data)
@@ -63,6 +60,12 @@ def create_user():
             'phoneNumber' not in request_data or
             'countryCode' not in request_data):
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
+            return error_response(400)
+
+        # Checks if the JWT identity is the same as the one being created
+        identity = get_jwt_identity()
+        if identity != "+" + request_data['countryCode'] + request_data['phoneNumber']:
+            current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
             return error_response(400)
 
         # Creates a User object and creates the user from the request body json
@@ -78,16 +81,8 @@ def create_user():
         db.session.commit()
         current_app.logger.info('commited user {0} {1} to the database session'.format(user.first_name, user.last_name))
 
-        # Creates the access token and the refresh token with identity equal to the key in the database
-        access_token = create_access_token(identity=user.country_calling_code + user.phone_number)
-        refresh_token = create_refresh_token(identity=user.country_calling_code + user.phone_number)
-
         # Returns the response with status code 201 to indicate the user has been created
-        return jsonify({
-            'token': access_token,
-            'expires_at': int(time.time()) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] - 1,
-            'refresh_token': refresh_token
-        }), 201
+        return error_response(201)
     except Exception as e:
         # Logs the exception that has been raised and rolls back all the changes made
         current_app.logger.fatal(str(e))
