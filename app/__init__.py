@@ -90,7 +90,7 @@ def create_app(config=Config):
         # Returns the app instance
         return app
     except Exception as e:
-        print(str(e)) 
+        print(str(e))
 
 
 from app import models
