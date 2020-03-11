@@ -49,7 +49,7 @@ def check_user_exists():
 
 
 @bp.route('/users', methods=['POST'])
-@jwt_required
+@verify_request
 def create_user():
     try:
         # Loads the request body into a json format and
@@ -159,7 +159,7 @@ def check_verification():
 
 
 @bp.route('/users/reset-password', methods=['POST'])
-@jwt_required
+@verify_request
 def reset_password():
     try:
         # Loads the request body into a json format and
