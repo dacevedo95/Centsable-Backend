@@ -34,6 +34,10 @@ def create_app(config=Config):
         from app.errors import bp as error_handler_bp
         app.register_blueprint(error_handler_bp)
 
+        # Registers the healthcheck
+        from app.health_check import bp as health_check_bp
+        app.register_blueprint(health_check_bp)
+
         # Only sets up the logger in production, when debugging and testing are off
         if not app.debug and not app.testing:
             # Checks if we set up a mail server
