@@ -4,7 +4,7 @@ from app.api import bp
 from app.models import User
 from app.api.auth import verify_request
 from app.api.errors import error_response
-from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims, jwt_refresh_token_required
 from sqlalchemy import and_
 
 import json
@@ -199,6 +199,29 @@ def reset_password():
         # Returns a 500 response (Internal Server Error)
         return error_response(500)
 
+
+@bp.route('/users/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    try:
+        # Gets the identity of the token
+        identity = get_jwt_identity()
+
+        # Creates the access token and the refresh token with identity equal to the key in the database
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
+
+        # Returns the response with status code 201 to indicate the user has been created
+        return jsonify({
+            'token': access_token,
+            'expires_at': int(time.time()) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] - 1,
+            'refresh_token': refresh_token
+        }), 200
+    except Exception as e:
+        # Logs the exception when it happens and
+        # Returns a 500 response (Internal Server Error)
+        current_app.logger.fatal(str(e))
+        return error_response(500)
 
 
 def __create_verification(channel, country_calling_code, phone_number):
