@@ -5,3 +5,10 @@ from app.models import User, Transaction
 from app.api.auth import verify_request
 from app.api.errors import error_response
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims, jwt_refresh_token_required
+
+bp.route('transaction', methods=['GET'])
+@verify_request
+def get_transactions():
+    # Gets the user based on the identity in the JWT
+
+    pass

@@ -19,7 +19,7 @@ def check_user_exists():
         # Gets the parameters for the call and
         # Checks whether the 'phoneNumber' parameter has been included and is not empty
         request_data = json.loads(request.data)
-        if 'phoneNumber' not in request_data or 'countryCode' not in request_data:
+        if 'phoneNumber' not in request_data:
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
@@ -65,7 +65,7 @@ def create_user():
 
         # Checks if the JWT identity is the same as the one being created
         identity = get_jwt_identity()
-        if identity != "+" + request_data['countryCode'] + request_data['phoneNumber']:
+        if identity != request_data['phoneNumber']:
             current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
             return error_response(400)
 
@@ -166,29 +166,28 @@ def reset_password():
         # Checks if all required parameters are included in the request
         request_data = json.loads(request.data)
         if ('newPassword' not in request_data or
-            'phoneNumber' not in request_data or
-            'countryCode' not in request_data):
+            'phoneNumber' not in request_data):
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
         # Checks if the JWT identity is the same as the one being created
         identity = get_jwt_identity()
-        if identity != "+" + request_data['countryCode'] + request_data['phoneNumber']:
-            current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
+        if identity != request_data['phoneNumber']:
+            current_app.logger.error('identity {0} doesnt match phone number {1}'.format(identity, request_data['phoneNumber']))
             return error_response(400)
 
         # Resets the password
-        user = User.query.filter(User.country_calling_code == request_data['countryCode'], User.phone_number == request_data['phoneNumber']).first()
+        user = User.query.filter(User.phone_number == request_data['phoneNumber']).first()
         user.reset_password(newPassword=request_data['newPassword'])
 
         # Logs that the user is being added to the database and then adds to the database
         # We will commit later once everything has been processed correctly
         db.session.add(user)
-        current_app.logger.info('added for country code {0} and phone number {1}'.format(request_data['countryCode'], request_data['phoneNumber']))
+        current_app.logger.info('added for phone number {0}'.format(request_data['phoneNumber']))
 
         # Commits the user to the database and logs that is has been commited
         db.session.commit()
-        current_app.logger.info('commited for country code {0} and phone number {1}'.format(request_data['countryCode'], request_data['phoneNumber']))
+        current_app.logger.info('commited for phone number {0}'.format(request_data['phoneNumber']))
 
         # Returns status code 200
         return error_response(200)
