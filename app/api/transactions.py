@@ -15,18 +15,14 @@ def transactions():
     if request.method == 'GET':
         return __get_transactions(get_jwt_identity())
     else:
-        return __create_transaction(get_jwt_identity(), json.loads(request.data))
+        return __create_transactions(get_jwt_identity(), json.loads(request.data))
 
 
-def __create_transaction(full_phone_number, request_data):
+def __create_transactions(full_phone_number, request_data):
     try:
         # Loads the request body
         # and checks whether all information is present
-        if ('name' not in request_data or
-            'category' not in request_data or
-            'price' not in request_data or
-            'createdAt' not in request_data or
-            'isRecurring' not in request_data):
+        if ('transactions' not in request_data):
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
@@ -34,19 +30,32 @@ def __create_transaction(full_phone_number, request_data):
         # and gets the user from the DB
         author = User.query.filter(User.full_phone_number == full_phone_number).first()
 
-        # Creates the new Transaction
-        # and attaches the author to it
-        transaction = Transaction()
-        transaction.from_dict(request_data, author)
+        # Gets the list of transactions
+        # And creates transactions for that User
+        transactions_list = request_data['transactions']
+        for item in transactions_list:
+            # Makes sure that the data is formatted correctly
+            if ('name' not in item or
+                'category' not in item or
+                'price' not in item or
+                'createdAt' not in item or
+                'isRecurring' not in item):
+                current_app.logger.error('transaction not formatted correctly, missing required parameters: {0}'.format(item))
+                return error_response(400)
 
-        # Logs that the user is being added to the database and then adds to the database
-        # We will commit later once everything has been processed correctly
-        db.session.add(transaction)
-        current_app.logger.info('added transaction {0} {1} to the database session'.format(transaction.category, transaction.name))
+            # Creates the new Transaction
+            # and attaches the author to it
+            transaction = Transaction()
+            transaction.from_dict(item, author)
+
+            # Logs that the user is being added to the database and then adds to the database
+            # We will commit later once everything has been processed correctly
+            db.session.add(transaction)
+            current_app.logger.info('added transaction {0} {1} to the database session'.format(transaction.category, transaction.name))
 
         # Commits the user to the database and logs that is has been commited
         db.session.commit()
-        current_app.logger.info('commited transaction {0} {1} to the database session'.format(transaction.category, transaction.name))
+        current_app.logger.info('commited transactions to the database session')
 
         # Returns the response with status code 201 to indicate the user has been created
         return error_response(201)
