@@ -19,7 +19,7 @@ def check_user_exists():
         # Gets the parameters for the call and
         # Checks whether the 'phoneNumber' parameter has been included and is not empty
         request_data = json.loads(request.data)
-        if 'phoneNumber' not in request_data:
+        if 'phoneNumber' not in request_data or 'countryCode' not in request_data:
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
@@ -28,18 +28,18 @@ def check_user_exists():
         exist_response = {
             'exists': False
         }
-        phone_number = request_data['phoneNumber']
-        current_app.logger.info('Checking if user with phone number {0} exists'.format(phone_number))
+        full_phone_number = '+' + request_data['countryCode'] + request_data['phoneNumber']
+        current_app.logger.info('Checking if user with phone number {0} exists'.format(full_phone_number))
 
         # Makes a call against the database to find a user based on the phone number filter and
         # Sets the response object field 'exists' to True if a user is found
-        user_by_phone = User.query.filter_by(phone_number=phone_number)
+        user_by_phone = User.query.filter_by(full_phone_number=full_phone_number)
         if user_by_phone.first() != None:
             exist_response['exists'] = True
 
         # Logs whether a user has been found and
         # Returns the response
-        current_app.logger.info('Found {0} user(s) with phone number {1}'.format(user_by_phone.count(), phone_number))
+        current_app.logger.info('Found {0} user(s) with phone number {1}'.format(user_by_phone.count(), full_phone_number))
         return jsonify(exist_response), 200
     except Exception as e:
         # Logs the response and
@@ -65,7 +65,7 @@ def create_user():
 
         # Checks if the JWT identity is the same as the one being created
         identity = get_jwt_identity()
-        if identity != request_data['phoneNumber']:
+        if identity != '+' + request_data['countryCode'] + request_data['phoneNumber']:
             current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
             return error_response(400)
 
@@ -166,28 +166,29 @@ def reset_password():
         # Checks if all required parameters are included in the request
         request_data = json.loads(request.data)
         if ('newPassword' not in request_data or
-            'phoneNumber' not in request_data):
+            'phoneNumber' not in request_data or
+            'countryCode' not in request_data):
             current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
         # Checks if the JWT identity is the same as the one being created
         identity = get_jwt_identity()
-        if identity != request_data['phoneNumber']:
+        if identity != '+' + request_data['countryCode'] + request_data['phoneNumber']:
             current_app.logger.error('identity {0} doesnt match phone number {1}'.format(identity, request_data['phoneNumber']))
             return error_response(400)
 
         # Resets the password
-        user = User.query.filter(User.phone_number == request_data['phoneNumber']).first()
+        user = User.query.filter(User.full_phone_number == identity).first()
         user.reset_password(newPassword=request_data['newPassword'])
 
         # Logs that the user is being added to the database and then adds to the database
         # We will commit later once everything has been processed correctly
         db.session.add(user)
-        current_app.logger.info('added for phone number {0}'.format(request_data['phoneNumber']))
+        current_app.logger.info('added for phone number {0}'.format(identity))
 
         # Commits the user to the database and logs that is has been commited
         db.session.commit()
-        current_app.logger.info('commited for phone number {0}'.format(request_data['phoneNumber']))
+        current_app.logger.info('commited for phone number {0}'.format(identity))
 
         # Returns status code 200
         return error_response(200)

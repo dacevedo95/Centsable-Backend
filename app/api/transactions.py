@@ -6,9 +6,26 @@ from app.api.auth import verify_request
 from app.api.errors import error_response
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims, jwt_refresh_token_required
 
-bp.route('transaction', methods=['GET'])
+@bp.route('/transactions', methods=['GET'])
 @verify_request
 def get_transactions():
-    # Gets the user based on the identity in the JWT
+    try:
+        # Gets the phone number from the jwt
+        # and finds the user with the query
+        full_phone_number = get_jwt_identity()
+        user = User.query.filter(User.full_phone_number == full_phone_number).first()
 
-    pass
+        # Gets the list of transactions from the user
+        transactions = []
+        for transaction in user.transactions:
+            transactions.append(transaction.to_dict())
+
+        # returns the jsonified version
+        return jsonify({
+            'transactions': transactions
+        }), 200
+    except Exception as e:
+        # Logs the response and
+        # Returns a 500 response (Internal Server Error)
+        current_app.logger.fatal(str(e))
+        return error_response(500)

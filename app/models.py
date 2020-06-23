@@ -12,13 +12,14 @@ class User(db.Model):
     last_name = db.Column(db.String(32))
     country_calling_code = db.Column(db.String(8))
     phone_number = db.Column(db.String(32), index=True, unique=True)
+    full_phone_number = db.Column(db.String(32))
     password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     verified_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     transactions = db.relationship('Transaction', backref='author', lazy='dynamic')
 
     def __repr__(self):
-        return '<User: {0}>'.format(self.email)
+        return '<User: {0}>'.format(self.phone_number)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -31,7 +32,7 @@ class User(db.Model):
             'id': self.id,
             'firstName': self.first_name,
             'lastName': self.last_name,
-            'country_calling_code': self.country_calling_code,
+            'countryCallingCode': self.country_calling_code,
             'phoneNumber': self.phone_number,
             'createdAt': self.created_at
         }
@@ -42,6 +43,7 @@ class User(db.Model):
         self.last_name = data['lastName']
         self.country_calling_code = data['countryCode']
         self.phone_number = data['phoneNumber']
+        self.full_phone_number = '+' + data['countryCode'] + data['phoneNumber']
 
         if new_user and 'password' in data:
             self.set_password(password=data['password'])
@@ -57,3 +59,13 @@ class Transaction(db.Model):
     price = db.Column(db.Numeric(9, 2))
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     is_recurring = db.Column(db.Boolean)
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'price': self.price,
+            'createdAt': self.created_at
+        }
+        return data
