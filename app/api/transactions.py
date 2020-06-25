@@ -14,7 +14,11 @@ import json
 @verify_request
 def transactions():
     if request.method == 'GET':
-        return __get_transactions(get_jwt_identity())
+        is_recurring = int(request.args.get('recurring', 0))
+        if is_recurring == 1:
+            return __get_recurring_transactions(get_jwt_identity())
+        else:
+            return __get_non_recurring_transactions(get_jwt_identity())
     else:
         return __create_transactions(get_jwt_identity(), json.loads(request.data))
 
@@ -76,7 +80,7 @@ def __create_transactions(full_phone_number, request_data):
         return error_response(500)
 
 
-def __get_transactions(full_phone_number):
+def __get_recurring_transactions(full_phone_number):
     try:
         # Gets the phone number from the jwt
         # and finds the user with the query
@@ -85,7 +89,31 @@ def __get_transactions(full_phone_number):
         # Gets the list of transactions from the user
         transactions = []
         for transaction in user.transactions:
-            transactions.append(transaction.to_dict())
+            if transaction.is_recurring:
+                transactions.append(transaction.to_dict())
+
+        # returns the jsonified version
+        return jsonify({
+            'transactions': transactions
+        }), 200
+    except Exception as e:
+        # Logs the response and
+        # Returns a 500 response (Internal Server Error)
+        current_app.logger.fatal(str(e))
+        return error_response(500)
+
+
+def __get_non_recurring_transactions(full_phone_number):
+    try:
+        # Gets the phone number from the jwt
+        # and finds the user with the query
+        user = User.query.filter(User.full_phone_number == full_phone_number).first()
+
+        # Gets the list of transactions from the user
+        transactions = []
+        for transaction in user.transactions:
+            if not transaction.is_recurring:
+                transactions.append(transaction.to_dict())
 
         # returns the jsonified version
         return jsonify({
