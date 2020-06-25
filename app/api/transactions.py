@@ -8,17 +8,35 @@ from flask_jwt_extended import create_access_token, create_refresh_token, get_jw
 from sqlalchemy import and_
 
 import json
+from datetime import datetime
 
 
 @bp.route('/transactions', methods=['GET', 'POST'])
 @verify_request
 def transactions():
+    # Checks the method being passed through to the API
     if request.method == 'GET':
-        is_recurring = int(request.args.get('recurring', 0))
-        if is_recurring == 1:
-            return __get_recurring_transactions(get_jwt_identity())
-        else:
-            return __get_non_recurring_transactions(get_jwt_identity())
+        # Gets the recurring flag from the URL
+        # If no flag is specified, we default to 0
+        is_recurring = bool(int(request.args.get('recurring', 0)))
+
+        # Gets the date flag from the URL
+        # If no date is specified, we pass through todays date
+        date_string = request.args.get('date', None)
+
+        # Checks if the date string is None
+        # If so, return a 400 error
+        if not date_string:
+            current_app.logger.error('Date not provided for the /transactions endpoint')
+            return error_response(400)
+
+        # Loads the date into a datetime object
+        date = datetime.strptime(date_string, '%Y-%m')
+
+        # Executes/Returns the data need whether it is recurring or non-recurring
+        return __get_transactions(get_jwt_identity(), is_recurring, date)
+    # The else statement means that it is a POST request
+    # In this case, we create a transaction
     else:
         return __create_transactions(get_jwt_identity(), json.loads(request.data))
 
@@ -80,7 +98,7 @@ def __create_transactions(full_phone_number, request_data):
         return error_response(500)
 
 
-def __get_recurring_transactions(full_phone_number):
+def __get_transactions(full_phone_number, is_recurring, date):
     try:
         # Gets the phone number from the jwt
         # and finds the user with the query
@@ -89,30 +107,7 @@ def __get_recurring_transactions(full_phone_number):
         # Gets the list of transactions from the user
         transactions = []
         for transaction in user.transactions:
-            if transaction.is_recurring:
-                transactions.append(transaction.to_dict())
-
-        # returns the jsonified version
-        return jsonify({
-            'transactions': transactions
-        }), 200
-    except Exception as e:
-        # Logs the response and
-        # Returns a 500 response (Internal Server Error)
-        current_app.logger.fatal(str(e))
-        return error_response(500)
-
-
-def __get_non_recurring_transactions(full_phone_number):
-    try:
-        # Gets the phone number from the jwt
-        # and finds the user with the query
-        user = User.query.filter(User.full_phone_number == full_phone_number).first()
-
-        # Gets the list of transactions from the user
-        transactions = []
-        for transaction in user.transactions:
-            if not transaction.is_recurring:
+            if transaction.is_recurring == is_recurring:
                 transactions.append(transaction.to_dict())
 
         # returns the jsonified version
