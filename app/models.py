@@ -70,10 +70,12 @@ class Transaction(db.Model):
         }
         return data
 
-    def from_dict(self, data, author):
+    def from_dict(self, data, author=None):
         self.name = data['name']
         self.category = data['category']
         self.price = data['price']
         self.created_at = datetime.datetime.strptime(data['createdAt'], '%Y-%m-%d')
         self.is_recurring = data['isRecurring']
-        self.author = author
+
+        if author:
+            self.author = author
