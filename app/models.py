@@ -17,6 +17,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     verified_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     transactions = db.relationship('Transaction', backref='author', lazy='dynamic')
+    recurring_transactions = db.relationship('RecurringTransaction', backref='recurring_author', lazy='dynamic')
 
     def __repr__(self):
         return '<User: {0}>'.format(self.phone_number)
@@ -58,7 +59,6 @@ class Transaction(db.Model):
     category = db.Column(db.String(32))
     price = db.Column(db.Float())
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    is_recurring = db.Column(db.Boolean)
 
     def to_dict(self):
         data = {
@@ -66,7 +66,8 @@ class Transaction(db.Model):
             'name': self.name,
             'category': self.category,
             'price': self.price,
-            'createdAt': self.created_at
+            'createdAt': self.created_at,
+            'canEdit': True
         }
         return data
 
@@ -75,7 +76,34 @@ class Transaction(db.Model):
         self.category = data['category']
         self.price = data['price']
         self.created_at = datetime.datetime.strptime(data['createdAt'], '%Y-%m-%d')
-        self.is_recurring = data['isRecurring']
 
         if author:
             self.author = author
+
+class RecurringTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    name = db.Column(db.String(128))
+    category = db.Column(db.String(32))
+    price = db.Column(db.Float())
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    def to_dict(self):
+        data = {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'price': self.price,
+            'createdAt': self.created_at,
+            'canEdit': False
+        }
+        return data
+
+    def from_dict(self, data, author=None):
+        self.name = data['name']
+        self.category = data['category']
+        self.price = data['price']
+        self.created_at = datetime.datetime.strptime(data['createdAt'], '%Y-%m-%d')
+
+        if author:
+            self.recurring_author = author

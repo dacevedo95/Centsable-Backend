@@ -1,7 +1,7 @@
 from flask import jsonify, request, url_for, g, abort, current_app
 from app import db
 from app.api import bp
-from app.models import User, Transaction
+from app.models import User, Transaction, RecurringTransaction
 from app.api.auth import verify_request
 from app.api.errors import error_response
 from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, jwt_required, get_jwt_claims, jwt_refresh_token_required
@@ -16,10 +16,6 @@ from datetime import datetime
 def transactions():
     # Checks the method being passed through to the API
     if request.method == 'GET':
-        # Gets the recurring flag from the URL
-        # If no flag is specified, we default to 0
-        is_recurring = bool(int(request.args.get('recurring', 0)))
-
         # Gets the date flag from the URL
         # If no date is specified, we pass through todays date
         date_string = request.args.get('date', None)
@@ -34,7 +30,7 @@ def transactions():
         date = datetime.strptime(date_string, '%Y-%m')
 
         # Executes/Returns the data need whether it is recurring or non-recurring
-        return __get_transactions(get_jwt_identity(), is_recurring, date)
+        return __get_transactions(get_jwt_identity(), date)
     # The else statement means that it is a POST request
     # In this case, we create a transaction
     else:
@@ -69,8 +65,7 @@ def __create_transactions(full_phone_number, request_data):
             if ('name' not in item or
                 'category' not in item or
                 'price' not in item or
-                'createdAt' not in item or
-                'isRecurring' not in item):
+                'createdAt' not in item):
                 current_app.logger.error('transaction not formatted correctly, missing required parameters: {0}'.format(item))
                 return error_response(400)
 
@@ -98,20 +93,34 @@ def __create_transactions(full_phone_number, request_data):
         return error_response(500)
 
 
-def __get_transactions(full_phone_number, is_recurring, date):
+def __get_transactions(full_phone_number, date):
     try:
-        # Gets the phone number from the jwt
-        # and finds the user with the query
-        user = User.query.filter(User.full_phone_number == full_phone_number).first()
+        # Gets both the monthly transactions
+        # and the recurring payments
+        transactions_by_month = Transaction.query.filter(Transaction.created_at >= date, Transaction.created_at < date.replace(month=date.month+1)).join(Transaction.author).filter(User.full_phone_number == full_phone_number)
+        recurring_transactions_by_user = RecurringTransaction.query.join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number)
 
-        # Gets the list of transactions from the user
+        # Initializes local variables for the return json
         transactions = []
-        for transaction in user.transactions:
-            if transaction.is_recurring == is_recurring:
-                transactions.append(transaction.to_dict())
+        recurring_transactions = []
+        amount_spent = 0
+
+        # Loops through all transactions and puts them in a list
+        # Also adds up the sum of transactions
+        for transaction in transactions_by_month:
+            amount_spent += transaction.price
+            transactions.append(transaction.to_dict())
+
+        # Loops through all transactions and puts them in a list
+        # Continues to add up the values
+        for recurring_transaction in recurring_transactions_by_user:
+            amount_spent += recurring_transaction.price
+            recurring_transactions.append(recurring_transaction.to_dict())
 
         # returns the jsonified version
         return jsonify({
+            'amountSpent': round(amount_spent, 2),
+            'recurringTransactions': recurring_transactions,
             'transactions': transactions
         }), 200
     except Exception as e:
@@ -128,8 +137,7 @@ def __update_transaction(id, full_phone_number, request_data):
         if ('name' not in request_data or
             'category' not in request_data or
             'price' not in request_data or
-            'createdAt' not in request_data or
-            'isRecurring' not in request_data):
+            'createdAt' not in request_data):
             current_app.logger.error('request data not formatted correctly, missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
