@@ -22,6 +22,14 @@ def recurring_transactions():
     else:
         return __create_recurring_transactions(get_jwt_identity(), json.loads(request.data))
 
+@bp.route('/recurring-transactions/<id>', methods=['PUT', 'DELETE'])
+@verify_request
+def update_recurring_transactions(id):
+    if request.method == 'PUT':
+        return __update_recurring_transaction(id, get_jwt_identity(), json.loads(request.data))
+    else:
+        return __delete_recurring_transaction(id, get_jwt_identity())
+
 
 def __get_recurring_transactions(full_phone_number):
     try:
@@ -90,6 +98,70 @@ def __create_recurring_transactions(full_phone_number, request_data):
 
         # Returns the response with status code 201 to indicate the user has been created
         return error_response(201)
+    except Exception as e:
+        # Logs the exception that has been raised and rolls back all the changes made
+        current_app.logger.fatal(str(e))
+        db.session.rollback()
+        # Returns a 500 response (Internal Server Error)
+        return error_response(500)
+
+def __update_recurring_transaction(id, full_phone_number, request_data):
+    try:
+        # Loads the request data
+        # and makes sure all fields are there
+        if ('name' not in request_data or
+            'category' not in request_data or
+            'price' not in request_data or
+            'createdAt' not in request_data):
+            current_app.logger.error('request data not formatted correctly, missing required parameters: {0}'.format(request_data))
+            return error_response(400)
+
+        # Loads the user from the identity in the JWT
+        # and queries the database
+        recurring_transaction = RecurringTransaction.query.filter(RecurringTransaction.id == id).join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number).first()
+
+        # checks if the row exists
+        if not recurring_transaction:
+            return error_response(403)
+
+        # updates all fields in the transaction
+        recurring_transaction.from_dict(request_data)
+
+        # Adds the transaction to the session
+        db.session.add(recurring_transaction)
+        current_app.logger.info('added transaction {0} {1} to the database session'.format(recurring_transaction.category, recurring_transaction.name))
+
+        # Commits the user to the database and logs that is has been commited
+        db.session.commit()
+        current_app.logger.info('commited transactions to the database session')
+
+        return error_response(204)
+    except Exception as e:
+        # Logs the exception that has been raised and rolls back all the changes made
+        current_app.logger.fatal(str(e))
+        db.session.rollback()
+        # Returns a 500 response (Internal Server Error)
+        return error_response(500)
+
+def __delete_recurring_transaction(id, full_phone_number):
+    try:
+        # Loads the user from the identity in the JWT
+        # and queries the database
+        recurring_transaction = RecurringTransaction.query.filter(RecurringTransaction.id == id).join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number).first()
+
+        # checks if the row exists
+        if not recurring_transaction:
+            return error_response(403)
+
+        # deletes the transaction from the session
+        db.session.delete(recurring_transaction)
+        current_app.logger.info('deleted transaction {0} {1} to the database session'.format(recurring_transaction.id, recurring_transaction.name))
+
+        # Commits the user to the database and logs that is has been commited
+        db.session.commit()
+        current_app.logger.info('commited transactions to the database session')
+
+        return error_response(204)
     except Exception as e:
         # Logs the exception that has been raised and rolls back all the changes made
         current_app.logger.fatal(str(e))

@@ -92,7 +92,6 @@ def __create_transactions(full_phone_number, request_data):
         # Returns a 500 response (Internal Server Error)
         return error_response(500)
 
-
 def __get_transactions(full_phone_number, date):
     try:
         # Gets both the monthly transactions
@@ -128,7 +127,6 @@ def __get_transactions(full_phone_number, date):
         # Returns a 500 response (Internal Server Error)
         current_app.logger.fatal(str(e))
         return error_response(500)
-
 
 def __update_transaction(id, full_phone_number, request_data):
     try:
@@ -167,7 +165,6 @@ def __update_transaction(id, full_phone_number, request_data):
         db.session.rollback()
         # Returns a 500 response (Internal Server Error)
         return error_response(500)
-
 
 def __delete_transaction(id, full_phone_number):
     try:
