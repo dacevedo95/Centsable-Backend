@@ -87,6 +87,7 @@ class RecurringTransaction(db.Model):
     category = db.Column(db.String(32))
     price = db.Column(db.Float())
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    effective_at = db.Column(db.DateTime, default=datetime.datetime(year=datetime.datetime.utcnow().year, month=datetime.datetime.utcnow().month, day=1))
 
     def to_dict(self):
         data = {
@@ -95,6 +96,7 @@ class RecurringTransaction(db.Model):
             'category': self.category,
             'price': self.price,
             'createdAt': self.created_at,
+            'effectiveDate': self.effective_at,
             'canEdit': False
         }
         return data
@@ -104,6 +106,7 @@ class RecurringTransaction(db.Model):
         self.category = data['category']
         self.price = data['price']
         self.created_at = datetime.datetime.strptime(data['createdAt'], '%Y-%m-%d')
+        self.effective_at = datetime.datetime.strptime(data['effectiveAt'], '%Y-%m')
 
         if author:
             self.recurring_author = author

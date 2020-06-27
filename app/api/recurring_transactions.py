@@ -32,6 +32,13 @@ def update_recurring_transactions(id):
 
 
 def __get_recurring_transactions(full_phone_number):
+    '''
+    Passing through the full phone number, we get the full list of recurring
+    transactions without worrying about dates
+
+    Once we get all recurring transactions, we calculate the total amount spent
+    '''
+
     try:
         print(full_phone_number)
         # Gets all recurring transactions by phone number
@@ -59,6 +66,17 @@ def __get_recurring_transactions(full_phone_number):
         return error_response(500)
 
 def __create_recurring_transactions(full_phone_number, request_data):
+    '''
+    Passing through the full phone number and recurring transaction request data,
+    we first get the user, and then create the transaction with the author
+
+    Since this can accept many transactions we do this for as many transactions
+    as there are
+
+    If it fails at any point, we roll back the changes and do not add any
+    transaction
+    '''
+
     try:
         # Loads the request body
         # and checks whether all information is present
@@ -78,7 +96,8 @@ def __create_recurring_transactions(full_phone_number, request_data):
             if ('name' not in item or
                 'category' not in item or
                 'price' not in item or
-                'createdAt' not in item):
+                'createdAt' not in item or
+                'effectiveAt' not in item):
                 current_app.logger.error('transaction not formatted correctly, missing required parameters: {0}'.format(item))
                 return error_response(400)
 
@@ -106,13 +125,19 @@ def __create_recurring_transactions(full_phone_number, request_data):
         return error_response(500)
 
 def __update_recurring_transaction(id, full_phone_number, request_data):
+    '''
+    Updates a transaction when given the id for that transaction, the full phone
+    number, and the new request data
+    '''
+
     try:
         # Loads the request data
         # and makes sure all fields are there
         if ('name' not in request_data or
             'category' not in request_data or
             'price' not in request_data or
-            'createdAt' not in request_data):
+            'createdAt' not in request_data or
+            'effectiveAt' not in request_data):
             current_app.logger.error('request data not formatted correctly, missing required parameters: {0}'.format(request_data))
             return error_response(400)
 
@@ -144,6 +169,12 @@ def __update_recurring_transaction(id, full_phone_number, request_data):
         return error_response(500)
 
 def __delete_recurring_transaction(id, full_phone_number):
+    '''
+    Deletes the recurring transaction given the id and the full phone number
+
+    If no transaction is found, we return a 403
+    '''
+
     try:
         # Loads the user from the identity in the JWT
         # and queries the database

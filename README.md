@@ -98,13 +98,3 @@ The output of this command should look a little something like this:
 ```
 
 These messages now imply that our app is running in a "Development" environment and that "Debug mode" is on.
-
-If you open up your browser and type in the URL http://127.0.0.1:5000/api/v1/hello, or if you open up (Postman)[https://www.getpostman.com/] and send a GET request to http://127.0.0.1:5000/api/v1/hello, you should see the following output:
-
-```
-{
-  "message": "Hello, World!"
-}
-```
-
-If you see this message, you have successfully run the app on your local machine, and you are finished with getting started

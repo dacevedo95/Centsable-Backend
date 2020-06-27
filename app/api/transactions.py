@@ -46,6 +46,13 @@ def update_transaction(id):
 
 
 def __create_transactions(full_phone_number, request_data):
+    '''
+    Creates a transaction when passing through transaction information, including a date
+
+    When the transaction is created, it is stored with a specific date. However, when it is
+    retrieved, it is retrieved with all other transactions with the same month and year
+    '''
+
     try:
         # Loads the request body
         # and checks whether all information is present
@@ -93,11 +100,23 @@ def __create_transactions(full_phone_number, request_data):
         return error_response(500)
 
 def __get_transactions(full_phone_number, date):
+    '''
+    This takes in two parameters. The full_phone_number allows us to look up all
+    transactions for a specific user, and the date allows us to get transactions
+    by month
+
+    We first get the transactions by month. Then we get all recurring transaction
+    who are already in effect. This allows us to more accurately show what the
+    user spent that month
+
+    After that we package it up nicely, and caluclate the total amount spent
+    '''
+
     try:
         # Gets both the monthly transactions
         # and the recurring payments
         transactions_by_month = Transaction.query.filter(Transaction.created_at >= date, Transaction.created_at < date.replace(month=date.month+1)).join(Transaction.author).filter(User.full_phone_number == full_phone_number)
-        recurring_transactions_by_user = RecurringTransaction.query.join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number)
+        recurring_transactions_by_user = RecurringTransaction.query.filter(RecurringTransaction.effective_at < date.replace(month=date.month+1)).join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number)
 
         # Initializes local variables for the return json
         transactions = []
@@ -129,6 +148,17 @@ def __get_transactions(full_phone_number, date):
         return error_response(500)
 
 def __update_transaction(id, full_phone_number, request_data):
+    '''
+    Updates a previously existing transaction by passing through the entire request object
+
+    In this case, all fields must be passed through, even if you are only editting one
+    field
+
+    The id of the transaction and phone number are passed through to identify the transactions
+    If nothing can be found, we return a 403 indicating the user was forbidden from taking
+    this action
+    '''
+
     try:
         # Loads the request data
         # and makes sure all fields are there
@@ -167,6 +197,13 @@ def __update_transaction(id, full_phone_number, request_data):
         return error_response(500)
 
 def __delete_transaction(id, full_phone_number):
+    '''
+    Deletes a transaction when given the id of that transaction and the user's full
+    phone number
+
+    If no transaction can be found then we return a 403.
+    '''
+
     try:
         # Loads the user from the identity in the JWT
         # and queries the database
