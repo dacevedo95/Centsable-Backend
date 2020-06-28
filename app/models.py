@@ -18,6 +18,7 @@ class User(db.Model):
     verified_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     transactions = db.relationship('Transaction', backref='author', lazy='dynamic')
     recurring_transactions = db.relationship('RecurringTransaction', backref='recurring_author', lazy='dynamic')
+    settings = db.relationship('Settings', backref='user', lazy='dynamic')
 
     def __repr__(self):
         return '<User: {0}>'.format(self.phone_number)
@@ -110,3 +111,31 @@ class RecurringTransaction(db.Model):
 
         if author:
             self.recurring_author = author
+
+class Settings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    needs_percentage = db.Column(db.Float())
+    wants_percentage = db.Column(db.Float())
+    savings_percentage = db.Column(db.Float())
+    income = db.Column(db.Float())
+    effective_at = db.Column(db.DateTime, default=datetime.datetime(year=datetime.datetime.utcnow().year, month=datetime.datetime.utcnow().month, day=1))
+
+    def to_dict(self):
+        data = {
+            'needsPercentage': self.needs_percentage,
+            'wantsPercentage': self.wants_percentage,
+            'savingsPercentage': self.savings_percentage,
+            'income': self.income
+        }
+        return data
+
+    def from_dict(self, data, user=None):
+        self.needs_percentage = data['needsPercentage']
+        self.wants_percentage = data['wantsPercentage']
+        self.savings_percentage = data['savingsPercentage']
+        self.income = data['income']
+        self.effective_at = datetime.datetime.strptime(data['effectiveAt'], '%Y-%m')
+
+        if user:
+            self.user = user

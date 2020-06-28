@@ -40,7 +40,6 @@ def __get_recurring_transactions(full_phone_number):
     '''
 
     try:
-        print(full_phone_number)
         # Gets all recurring transactions by phone number
         recurring_transactions_by_user = RecurringTransaction.query.join(RecurringTransaction.recurring_author).filter(User.full_phone_number == full_phone_number)
 

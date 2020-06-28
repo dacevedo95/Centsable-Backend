@@ -14,15 +14,42 @@ from datetime import datetime
 @verify_request
 def get_overview():
     # Checks if a date has been passed through
-    # if not, we default to todays month and year
     date_param = request.args.get('date', None)
+
+    # Gets today's YYYY-MM as a string to use later on
+    date_today = datetime.today().strftime('%Y-%m')
+
+    # if the date was not passed we get today's YYYY-MM
+    # and set is_curent to True
     if not date_param:
-        # Gets the current date in YYYY-MM format
-        date_today = datetime.today().strftime('%Y-%m')
-        return __get_overview(None)
+        return __get_overview(date_today, is_current=True)
     else:
-        pass
+        # If the date was set, we first need to check if it is todays YYYY-MM
+        # If so, then sick
+        if date_today == date_param:
+            return __get_overview(date_today, is_current=True)
+        else:
+            return __get_overview(date_param, is_current=False)
 
 
-def __get_overview(date, is_past_date=False):
+def __get_overview(date, is_current=False):
+    '''
+    Per the designs, we will pass back:
+        - A header ("Hello, David", "Well Done", "Over Budget")
+        - Total Amount Spent
+        - Total Income
+        - Show Info
+        - Spending
+            - Needs (spent, allowed, percentage)
+            - Wants (spent, allowed, percentage)
+            - Savings (spent, allowed, percentage)
+    '''
+
+    # Formats the response
+    response = {
+        "header": "",
+        "amountSpent": 0,
+        "monthlyIncome": 0
+    }
+
     pass
