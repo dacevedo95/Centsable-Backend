@@ -48,48 +48,116 @@ def check_user_exists():
         return error_response(500)
 
 
-@bp.route('/users', methods=['POST'])
+@bp.route('/users', methods=['GET', 'POST', 'PUT'])
 @verify_request
 def create_user():
-    try:
-        # Loads the request body into a json format and
-        # Checks if all required parameters are included in the request
-        request_data = json.loads(request.data)
-        if ('firstName' not in request_data or
-            'lastName' not in request_data or
-            'password' not in request_data or
-            'phoneNumber' not in request_data or
-            'countryCode' not in request_data):
-            current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
-            return error_response(400)
+    # Checks the method being passed through to the API
+    if request.method == 'GET':
+        try:
+            # Gets the full_phone_number from the request
+            full_phone_number = get_jwt_identity()
 
-        # Checks if the JWT identity is the same as the one being created
-        identity = get_jwt_identity()
-        if identity != '+' + request_data['countryCode'] + request_data['phoneNumber']:
-            current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
-            return error_response(400)
+            # Makes the query to get the user
+            user = User.query.filter(User.full_phone_number == full_phone_number).first()
 
-        # Creates a User object and creates the user from the request body json
-        user = User()
-        user.from_dict(request_data, new_user=True)
+            # Returns the user details
+            return jsonify(user.to_dict()), 200
+        except Exception as e:
+            # Logs the response and
+            # Returns a 500 response (Internal Server Error)
+            current_app.logger.fatal('Error on line {0} {1}'.format(sys.exc_info()[-1].tb_lineno, str(e)))
+            return error_response(500)
+    elif request.method == 'POST':
+        try:
+            # Loads the request body into a json format and
+            # Checks if all required parameters are included in the request
+            request_data = json.loads(request.data)
+            if ('firstName' not in request_data or
+                'lastName' not in request_data or
+                'password' not in request_data or
+                'phoneNumber' not in request_data or
+                'countryCode' not in request_data):
+                current_app.logger.error('request body not formatted correctly, body is missing required parameters: {0}'.format(request_data))
+                return error_response(400)
 
-        # Logs that the user is being added to the database and then adds to the database
-        # We will commit later once everything has been processed correctly
-        db.session.add(user)
-        current_app.logger.info('added user {0} {1} to the database session'.format(user.first_name, user.last_name))
+            # Checks if the JWT identity is the same as the one being created
+            identity = get_jwt_identity()
+            if identity != '+' + request_data['countryCode'] + request_data['phoneNumber']:
+                current_app.logger.error('identity {0} doesnt match phone number +{1}{2}'.format(identity, request_data['countryCode'], request_data['phoneNumber']))
+                return error_response(400)
 
-        # Commits the user to the database and logs that is has been commited
-        db.session.commit()
-        current_app.logger.info('commited user {0} {1} to the database session'.format(user.first_name, user.last_name))
+            # Creates a User object and creates the user from the request body json
+            user = User()
+            user.from_dict(request_data, new_user=True)
 
-        # Returns the response with status code 201 to indicate the user has been created
-        return error_response(201)
-    except Exception as e:
-        # Logs the exception that has been raised and rolls back all the changes made
-        current_app.logger.fatal(str(e))
-        db.session.rollback()
-        # Returns a 500 response (Internal Server Error)
-        return error_response(500)
+            # Logs that the user is being added to the database and then adds to the database
+            # We will commit later once everything has been processed correctly
+            db.session.add(user)
+            current_app.logger.info('added user {0} {1} to the database session'.format(user.first_name, user.last_name))
+
+            # Commits the user to the database and logs that is has been commited
+            db.session.commit()
+            current_app.logger.info('commited user {0} {1} to the database session'.format(user.first_name, user.last_name))
+
+            # Returns the response with status code 201 to indicate the user has been created
+            return error_response(201)
+        except Exception as e:
+            # Logs the exception that has been raised and rolls back all the changes made
+            current_app.logger.fatal(str(e))
+            db.session.rollback()
+            # Returns a 500 response (Internal Server Error)
+            return error_response(500)
+    else:
+        try:
+            # Loads the request data
+            # and makes sure all fields are there
+            request_data = json.loads(request.data)
+            if ('firstName' not in request_data or
+                'lastName' not in request_data or
+                'countryCode' not in request_data or
+                'phoneNumber' not in request_data):
+                current_app.logger.error('request data not formatted correctly, missing required parameters: {0}'.format(request_data))
+                return error_response(400)
+
+            # Gets the full_phone_number from the request
+            full_phone_number = get_jwt_identity()
+
+            # Loads the user from the identity in the JWT
+            # and queries the database
+            user = User.query.filter(User.full_phone_number == full_phone_number).first()
+
+            # checks if the row exists
+            if not user:
+                return error_response(403)
+
+            # updates all fields in the transaction
+            user.from_dict(request_data)
+
+            # Adds the transaction to the session
+            db.session.add(user)
+            current_app.logger.info('added user {0} {1} to the database session'.format(user.first_name, user.last_name))
+
+            # Generates the access token
+            access_token = create_access_token(identity='+'+user.country_calling_code+user.phone_number)
+            refresh_token = create_refresh_token(identity='+'+user.country_calling_code+user.phone_number)
+
+            # Commits the user to the database and logs that is has been commited
+            db.session.commit()
+            current_app.logger.info('commited transactions to the database session')
+
+            # Returns the access token
+            return jsonify({
+                'token': access_token,
+                'expires_at': int(time.time()) + current_app.config['JWT_ACCESS_TOKEN_EXPIRES'] - 1,
+                'refresh_token': refresh_token
+            }), 200
+        except Exception as e:
+            # Logs the exception that has been raised and rolls back all the changes made
+            current_app.logger.fatal(str(e))
+            db.session.rollback()
+            # Returns a 500 response (Internal Server Error)
+            return error_response(500)
+
 
 
 @bp.route('/users/verification', methods=['POST'])
