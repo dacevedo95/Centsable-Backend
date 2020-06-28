@@ -1,12 +1,13 @@
 import unittest
 import json
+import os
 
 from app import create_app
 from config import Config
 
 class TEST_CONFIG(Config):
     TESTING = 1
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app.db')
 
 
 class UserManagementTestCases(unittest.TestCase):
