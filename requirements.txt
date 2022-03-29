@@ -30,7 +30,7 @@ jmespath==0.9.4
 jsonschema==3.2.0
 Mako==1.1.1
 MarkupSafe==1.1.1
-paramiko==2.7.1
+paramiko==2.10.1
 pathspec==0.5.9
 pycparser==2.19
 PyJWT==1.7.1
